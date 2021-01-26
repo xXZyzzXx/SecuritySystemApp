@@ -1,3 +1,7 @@
+import os
+from config import configs
+from dotenv import load_dotenv
+
 from flask import Flask, Blueprint
 from flask_restful import Api, Resource, reqparse
 
@@ -30,7 +34,7 @@ class Transaction(Resource):
     def post(self, app_id):
         args = parser.parse_args()
         print(f'Получена транзакция от приложения {app_id}: {args.transaction}')
-        answer = 'Транзакция получена сервером'
+        answer = {'command': 'Транзакция получена сервером'}
         return answer
 
 
@@ -47,6 +51,10 @@ api.add_resource(Transaction, '/api/transaction/<int:app_id>')
 api.add_resource(Alarm, '/api/alarm/<int:app_id>')
 app.register_blueprint(api_bp)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+load_dotenv('.env')
+# print(os.environ.get('SECRET_KEY'))
+evn = os.environ.get('FLASK_ENV', 'default')
+app.config.from_object(configs[evn])  # Получить значение FLASK_ENV и настроить конфигурацию
 
+if __name__ == '__main__':
+    app.run()
