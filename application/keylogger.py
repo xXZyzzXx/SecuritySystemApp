@@ -1,6 +1,5 @@
 import usb.core
 import sys
-import time
 
 USB_IF = 0  # Interface
 USB_TIMEOUT = 5  # Timeout in MS
@@ -16,7 +15,7 @@ for cfg in dev:  # Get vendor ID from devices
     sys.stdout.write('Hexadecimal VendorID=' + hex(cfg.idVendor) + ' & ProductID=' + hex(cfg.idProduct) + '\n')
 
 dev = usb.core.find(idVendor=Vendor_ID, idProduct=Product_ID)
-print(f'DEV: {dev}')
+print(f'Devices: {dev}')
 endpoint = dev[0][(0, 0)][0]
 cfg = dev.get_active_configuration()
 interface_number = cfg[(0, 0)].bInterfaceNumber
@@ -38,22 +37,4 @@ except:
 
 data = dev.read(0x81, 4)
 print(f'data: {data}')
-
-# Second try code
-'''
-if dev.is_kernel_driver_active(USB_IF) is True:
-    dev.detach_kernel_driver(USB_IF)
-
-usb.util.claim_interface(dev, USB_IF)
-
-while True:
-    control = None
-    try:
-        control = dev.read(endpoint.bEndpointAddress, endpoint.wMaxPacketSize, USB_TIMEOUT)
-        print(control)
-    except:
-        pass
-        
-    time.sleep(0.01)  
-'''
 

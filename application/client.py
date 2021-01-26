@@ -1,40 +1,52 @@
 # -*- coding: utf-8 -*-
+import os
 import sys
 import traceback
 import requests
+from dotenv import load_dotenv
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QTimer, QThread, pyqtSignal, QEventLoop
+from PyQt5.QtCore import QTimer
+
+from encrypt import encrypt_message, decrypt_message
 
 
 class Ui_MainWindow(object):
 
     def send_transaction(self):
+        """
+        Отправляет транзакцию на сервер, на текущий момент не работает из-за незаконченного шифрования
+        """
         transaction = {'transaction': {'user': 2}}
+        data = {'key': encrypt_message(transaction)}
         url = f"http://localhost:5000/api/transaction/{self.app_id}"
-        r = requests.post(url, data=transaction)
+        r = requests.post(url, data=data)
         answer = r.json()
-        if 'command' in answer:
-            print(answer['command'])
+        print(answer)
+        if answer and 'command' in answer:
+            print(f"Получена команда: {answer['command']}")
         else:
-            print(answer)
+            print('Не поступило команды от сервера')
 
     def send_status(self):
+        """
+        Отправляет статус приложения на сервер каждое n-ное время
+        """
         status = {'status': 'active'}
         url = f"http://localhost:5000/api/status/{self.app_id}"
-        r = requests.post(url, data=status)
-        answer = r.json()
-        if 'command' in answer:
-            print(answer['command'])
+        requests.post(url, data=status)
 
     def send_alarm(self):
+        """
+        Отправляется на сервер в случае попытки взлома приложения,
+        при получении команды 'reload' выводит полученную команду
+        """
         alert = {'alert': 'active'}
         url = f"http://localhost:5000/api/alarm/{self.app_id}"
         r = requests.post(url, data=alert)
         answer = r.json()
-        if 'command' in answer:
+        if answer and 'command' in answer:
             if answer['command'] == 'reload':
-                print(str(answer))
                 QtWidgets.QMessageBox.information(
                     self.centralwidget,
                     "Перезагрузка",
@@ -47,24 +59,33 @@ class Ui_MainWindow(object):
             print('Не поступило команды от сервера')
 
     def generate_error(self):
+        """
+        Вызывает исключение OSError для симуляции ошибки в приложении
+        """
         raise OSError
 
     def upload_statistic(self):
+        """
+        Запускает функцию отправки статуса на сервер и обновляет счётчик запросов
+        """
         self.send_status()
         self.lcs_value += 1
         print(f'Upload status count: {self.lcs_value}')
         self.lcdNumber.display(self.lcs_value)
 
     def start_upload(self):
-        # self.dataCollectionThread = DataCaptureThread()
-        # self.dataCollectionThread.start()
+        """
+        Запускает таймер отправки статистики
+        """
         self.upload_statistic()
         self.timer.start(10000)
         self.pushButton_1.setEnabled(False)
         self.pushButton_2.setEnabled(True)
 
     def end_upload(self):
-        # self.dataCollectionThread.terminate()
+        """
+        Приостанавливает таймер отправки статистики
+        """
         self.timer.stop()
         self.pushButton_1.setEnabled(True)
         self.pushButton_2.setEnabled(False)
@@ -147,23 +168,41 @@ class Ui_MainWindow(object):
         self.pushButton_5.setText(_translate("MainWindow", "Симуляция взлома"))
 
 
-def send_error(application, error):
-    error = {'error': error}
+def send_error(application, tb):
+    """
+    Отправляет сообщение об ошибке в приложении
+
+    :param application: Ui_MainWindow class
+    :param str tb: Сообщение об ошибке (traceback)
+    """
+    error = {'error': tb}
     url = f"http://localhost:5000/api/error/{application.app_id}"
     r = requests.post(url, data=error)
     answer = r.json()
-    if 'command' in answer:
+    if answer and 'command' in answer:
         print(answer['command'])
 
 
 def excepthook(exc_type, exc_value, exc_tb):
+    """
+    Прослушивает приложение на наличие ошибок
+
+    :param exc_type: OSError type
+    :param exc_value: OSError value
+    :param exc_tb: Traceback from error handler
+    """
     ui.lcs_errors += 1
     ui.lcdNumber_2.display(ui.lcs_errors)
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     print("Oбнаружена ошибка !:", tb)
-    send_error(ui, error=tb)
+    send_error(ui, tb=tb)
     # QtWidgets.QApplication.quit()  # завершить событие
 
+
+if os.path.exists('.env'):
+    load_dotenv('.env')
+
+crypt_key = os.environ.get('CRYPT_KEY')
 
 if __name__ == "__main__":
     sys.excepthook = excepthook
@@ -173,34 +212,3 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
-
-
-''' Необходимо перенести Timer в QThread, чтобы не замерзал GUI
-class Thread(QThread):
-    _signal = pyqtSignal()
-
-    def __init__(self):
-        super(Thread, self).__init__()
-
-    def __del__(self):
-        self.wait()
-
-    def run(self):
-        self._signal.emit()
-
-
-class DataCaptureThread(QThread):
-    def collectProcessData(self):
-        ui.send_status()
-
-    def __init__(self, *args, **kwargs):
-        QThread.__init__(self, *args, **kwargs)
-        self.dataCollectionTimer = QTimer()
-        self.dataCollectionTimer.moveToThread(self)
-        self.dataCollectionTimer.timeout.connect(self.collectProcessData)
-
-    def run(self):
-        self.dataCollectionTimer.start(1000)
-        loop = QEventLoop()
-        loop.exec_()
-'''
