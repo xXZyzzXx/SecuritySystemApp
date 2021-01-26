@@ -8,6 +8,67 @@ from PyQt5.QtCore import QTimer, QThread, pyqtSignal, QEventLoop
 
 
 class Ui_MainWindow(object):
+
+    def send_transaction(self):
+        transaction = {'transaction': {'user': 2}}
+        url = f"http://localhost:5000/api/transaction/{self.app_id}"
+        r = requests.post(url, data=transaction)
+        answer = r.json()
+        if 'command' in answer:
+            print(answer['command'])
+        else:
+            print(answer)
+
+    def send_status(self):
+        status = {'status': 'active'}
+        url = f"http://localhost:5000/api/status/{self.app_id}"
+        r = requests.post(url, data=status)
+        answer = r.json()
+        if 'command' in answer:
+            print(answer['command'])
+
+    def send_alarm(self):
+        alert = {'alert': 'active'}
+        url = f"http://localhost:5000/api/alarm/{self.app_id}"
+        r = requests.post(url, data=alert)
+        answer = r.json()
+        if 'command' in answer:
+            if answer['command'] == 'reload':
+                print(str(answer))
+                QtWidgets.QMessageBox.information(
+                    self.centralwidget,
+                    "Перезагрузка",
+                    f"Получена команда: {str(answer)}",
+                    QtWidgets.QMessageBox.Ok,
+                    QtWidgets.QMessageBox.Ok)
+            else:
+                print(f'Неизвестная команда: {answer["command"]}')
+        else:
+            print('Не поступило команды от сервера')
+
+    def generate_error(self):
+        raise OSError
+
+    def upload_statistic(self):
+        self.send_status()
+        self.lcs_value += 1
+        print(f'Upload status count: {self.lcs_value}')
+        self.lcdNumber.display(self.lcs_value)
+
+    def start_upload(self):
+        # self.dataCollectionThread = DataCaptureThread()
+        # self.dataCollectionThread.start()
+        self.upload_statistic()
+        self.timer.start(10000)
+        self.pushButton_1.setEnabled(False)
+        self.pushButton_2.setEnabled(True)
+
+    def end_upload(self):
+        # self.dataCollectionThread.terminate()
+        self.timer.stop()
+        self.pushButton_1.setEnabled(True)
+        self.pushButton_2.setEnabled(False)
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(500, 200)
@@ -73,66 +134,6 @@ class Ui_MainWindow(object):
 
         self.pushButton_2.setEnabled(False)
         # self.start_upload()
-
-    def generate_error(self):
-        raise OSError
-
-    def send_transaction(self):
-        transaction = {'transaction': {'amount': 50}}
-        url = f"http://localhost:5000/api/transaction/{self.app_id}"
-        r = requests.post(url, data=transaction)
-        answer = r.json()
-        if 'command' in answer:
-            print(answer['command'])
-        else:
-            print(answer)
-
-    def send_status(self):
-        status = {'status': 'active'}
-        url = f"http://localhost:5000/api/status/{self.app_id}"
-        r = requests.post(url, data=status)
-        answer = r.json()
-        if 'command' in answer:
-            print(answer['command'])
-
-    def send_alarm(self):
-        alert = {'alert': 'active'}
-        url = f"http://localhost:5000/api/alarm/{self.app_id}"
-        r = requests.post(url, data=alert)
-        answer = r.json()
-        if 'command' in answer:
-            if answer['command'] == 'reload':
-                print(str(answer))
-                QtWidgets.QMessageBox.information(
-                    self.centralwidget,
-                    "Перезагрузка",
-                    f"Получена команда: {str(answer)}",
-                    QtWidgets.QMessageBox.Ok,
-                    QtWidgets.QMessageBox.Ok)
-            else:
-                print(f'Неизвестная команда: {answer["command"]}')
-        else:
-            print('Не поступило команды от сервера')
-
-    def upload_statistic(self):
-        self.send_status()
-        self.lcs_value += 1
-        print(f'Upload status count: {self.lcs_value}')
-        self.lcdNumber.display(self.lcs_value)
-
-    def start_upload(self):
-        # self.dataCollectionThread = DataCaptureThread()
-        # self.dataCollectionThread.start()
-        self.upload_statistic()
-        self.timer.start(10000)
-        self.pushButton_1.setEnabled(False)
-        self.pushButton_2.setEnabled(True)
-
-    def end_upload(self):
-        # self.dataCollectionThread.terminate()
-        self.timer.stop()
-        self.pushButton_1.setEnabled(True)
-        self.pushButton_2.setEnabled(False)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
