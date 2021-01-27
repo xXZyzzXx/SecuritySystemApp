@@ -10,6 +10,7 @@
 
 * Python3
 * Flask
+* Flask-Talisman
 * pyusb
 * cryptography
 * requests
@@ -18,6 +19,10 @@
 
     pip install -r requirements.txt
 
+## Tests
+
+    cd application
+    python -m unittest --buffer
 
 ## TODO List:
 
