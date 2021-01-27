@@ -19,6 +19,12 @@ parser.add_argument('transaction')
 
 
 def decrypt_client_message(args):
+    """
+    Дешифрует сообщения в запросе с помощью ключа.
+
+    :param args: аргументы запроса
+    :return type=dict: дешифрованное сообщение
+    """
     if args.key is not None:
         decrypt = decrypt_message(args.key.encode())
         message = json.loads(decrypt)
@@ -26,6 +32,7 @@ def decrypt_client_message(args):
 
 
 class Status(Resource):
+    """Получает статус приложения"""
     def post(self, app_id):
         args = parser.parse_args()
         message = decrypt_client_message(args)
@@ -35,6 +42,7 @@ class Status(Resource):
 
 
 class Errors(Resource):
+    """Получает ошибки из приложения"""
     def post(self, app_id):
         args = parser.parse_args()
         message = decrypt_client_message(args)
@@ -43,6 +51,7 @@ class Errors(Resource):
 
 
 class Transaction(Resource):
+    """Получает транзакцию из приложения, возвращает сообщение об успешной отправке"""
     def post(self, app_id):
         args = parser.parse_args()
         message = decrypt_client_message(args)
@@ -55,6 +64,7 @@ class Transaction(Resource):
 
 
 class Alarm(Resource):
+    """Получает сообщение об попытке взлома в приложении, возвращает команду перезагрузки"""
     def post(self, app_id):
         args = parser.parse_args()
         message = decrypt_client_message(args)
