@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
+import json
 import traceback
 import requests
 from dotenv import load_dotenv
@@ -11,19 +12,32 @@ from PyQt5.QtCore import QTimer
 from encrypt import encrypt_message, decrypt_message
 
 
-class Ui_MainWindow(object):
+def post_data(url, data):
+    """
+    Шифрует сообщение, отправляет на указанный в url сервер и дешифрует ответ
+
+    :param url: url-адрес
+    :param data: данные для отправки post запроса
+    :return: возвращает словарь с ответом от сервера
+    """
+    encrypted = encrypt_message(data)
+    r = requests.post(url, data={"key": encrypted})
+    answer = r.json()
+    if isinstance(answer, dict) and 'key' in answer:
+        decrypt = decrypt_message(answer['key'].encode())
+        return json.loads(decrypt)
+
+
+class MainWindowUI(object):
 
     def send_transaction(self):
         """
-        Отправляет транзакцию на сервер, на текущий момент не работает из-за незаконченного шифрования
+        Отправляет транзакцию на сервер, выводит полученный ответ
         """
-        transaction = {'transaction': {'user': 2}}
-        data = {'key': encrypt_message(transaction)}
         url = f"http://localhost:5000/api/transaction/{self.app_id}"
-        r = requests.post(url, data=data)
-        answer = r.json()
-        print(answer)
-        if answer and 'command' in answer:
+        transaction = {'transaction': {'user': 2}}
+        answer = post_data(url, transaction)
+        if isinstance(answer, dict) and 'command' in answer:
             print(f"Получена команда: {answer['command']}")
         else:
             print('Не поступило команды от сервера')
@@ -34,25 +48,19 @@ class Ui_MainWindow(object):
         """
         status = {'status': 'active'}
         url = f"http://localhost:5000/api/status/{self.app_id}"
-        requests.post(url, data=status)
+        post_data(url, status)
 
     def send_alarm(self):
         """
         Отправляется на сервер в случае попытки взлома приложения,
         при получении команды 'reload' выводит полученную команду
         """
-        alert = {'alert': 'active'}
+        alert = {'alert': 'caution'}
         url = f"http://localhost:5000/api/alarm/{self.app_id}"
-        r = requests.post(url, data=alert)
-        answer = r.json()
-        if answer and 'command' in answer:
+        answer = post_data(url, alert)
+        if isinstance(answer, dict) and 'command' in answer:
             if answer['command'] == 'reload':
-                QtWidgets.QMessageBox.information(
-                    self.centralwidget,
-                    "Перезагрузка",
-                    f"Получена команда: {str(answer)}",
-                    QtWidgets.QMessageBox.Ok,
-                    QtWidgets.QMessageBox.Ok)
+                self.show_reload_messagebox(answer)
             else:
                 print(f'Неизвестная команда: {answer["command"]}')
         else:
@@ -79,16 +87,27 @@ class Ui_MainWindow(object):
         """
         self.upload_statistic()
         self.timer.start(10000)
-        self.pushButton_1.setEnabled(False)
-        self.pushButton_2.setEnabled(True)
+        self.send_data_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
 
     def end_upload(self):
         """
         Приостанавливает таймер отправки статистики
         """
         self.timer.stop()
-        self.pushButton_1.setEnabled(True)
-        self.pushButton_2.setEnabled(False)
+        self.send_data_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
+
+    def show_reload_messagebox(self, answer):
+        """
+        Вызывает окно с уведомлением о перезагрузке
+        """
+        QtWidgets.QMessageBox.information(
+            self.centralwidget,
+            "Перезагрузка",
+            f"Получена команда: {str(answer)}",
+            QtWidgets.QMessageBox.Ok,
+            QtWidgets.QMessageBox.Ok)
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -96,48 +115,48 @@ class Ui_MainWindow(object):
         self.app_id = 758275
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(10, 20, 181, 21))
+        self.status_label = QtWidgets.QLabel(self.centralwidget)
+        self.status_label.setGeometry(QtCore.QRect(10, 20, 181, 21))
         font = QtGui.QFont()
         font.setPointSize(14)
-        self.label.setFont(font)
-        self.label.setObjectName("label")
-        self.label_2 = QtWidgets.QLabel(self.centralwidget)
-        self.label_2.setGeometry(QtCore.QRect(10, 80, 231, 21))
+        self.status_label.setFont(font)
+        self.status_label.setObjectName("label")
+        self.errors_label = QtWidgets.QLabel(self.centralwidget)
+        self.errors_label.setGeometry(QtCore.QRect(10, 80, 231, 21))
         font = QtGui.QFont()
         font.setPointSize(14)
-        self.label_2.setFont(font)
-        self.label_2.setObjectName("label_2")
+        self.errors_label.setFont(font)
+        self.errors_label.setObjectName("label_2")
         self.lcdNumber = QtWidgets.QLCDNumber(self.centralwidget)
         self.lcdNumber.setGeometry(QtCore.QRect(410, 20, 64, 21))
         self.lcdNumber.setObjectName("lcdNumber")
         self.lcdNumber_2 = QtWidgets.QLCDNumber(self.centralwidget)
         self.lcdNumber_2.setGeometry(QtCore.QRect(410, 80, 64, 21))
         self.lcdNumber_2.setObjectName("lcdNumber_2")
-        self.pushButton_1 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_1.setGeometry(QtCore.QRect(210, 20, 75, 23))
-        self.pushButton_1.setObjectName("pushButton_1")
-        self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_2.setGeometry(QtCore.QRect(300, 20, 75, 23))
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.pushButton_3 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_3.setGeometry(QtCore.QRect(20, 140, 111, 31))
+        self.send_data_button = QtWidgets.QPushButton(self.centralwidget)
+        self.send_data_button.setGeometry(QtCore.QRect(210, 20, 75, 23))
+        self.send_data_button.setObjectName("pushButton_1")
+        self.stop_button = QtWidgets.QPushButton(self.centralwidget)
+        self.stop_button.setGeometry(QtCore.QRect(300, 20, 75, 23))
+        self.stop_button.setObjectName("pushButton_2")
+        self.transaction_button = QtWidgets.QPushButton(self.centralwidget)
+        self.transaction_button.setGeometry(QtCore.QRect(20, 140, 111, 31))
         font = QtGui.QFont()
         font.setPointSize(12)
-        self.pushButton_3.setFont(font)
-        self.pushButton_3.setObjectName("pushButton_3")
-        self.pushButton_4 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_4.setGeometry(QtCore.QRect(150, 140, 161, 31))
+        self.transaction_button.setFont(font)
+        self.transaction_button.setObjectName("pushButton_3")
+        self.error_button = QtWidgets.QPushButton(self.centralwidget)
+        self.error_button.setGeometry(QtCore.QRect(150, 140, 161, 31))
         font = QtGui.QFont()
         font.setPointSize(12)
-        self.pushButton_4.setFont(font)
-        self.pushButton_4.setObjectName("pushButton_4")
-        self.pushButton_5 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_5.setGeometry(QtCore.QRect(330, 140, 151, 31))
+        self.error_button.setFont(font)
+        self.error_button.setObjectName("pushButton_4")
+        self.alarm_button = QtWidgets.QPushButton(self.centralwidget)
+        self.alarm_button.setGeometry(QtCore.QRect(330, 140, 151, 31))
         font = QtGui.QFont()
         font.setPointSize(12)
-        self.pushButton_5.setFont(font)
-        self.pushButton_5.setObjectName("pushButton_5")
+        self.alarm_button.setFont(font)
+        self.alarm_button.setObjectName("pushButton_5")
         MainWindow.setCentralWidget(self.centralwidget)
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -147,25 +166,25 @@ class Ui_MainWindow(object):
         self.timer = QTimer(MainWindow)
         self.timer.timeout.connect(self.upload_statistic)
 
-        self.pushButton_1.clicked.connect(self.start_upload)
-        self.pushButton_2.clicked.connect(self.end_upload)
-        self.pushButton_3.clicked.connect(self.send_transaction)  # self.generate_error
-        self.pushButton_4.clicked.connect(self.generate_error)
-        self.pushButton_5.clicked.connect(self.send_alarm)
+        self.send_data_button.clicked.connect(self.start_upload)
+        self.stop_button.clicked.connect(self.end_upload)
+        self.transaction_button.clicked.connect(self.send_transaction)
+        self.error_button.clicked.connect(self.generate_error)
+        self.alarm_button.clicked.connect(self.send_alarm)
 
-        self.pushButton_2.setEnabled(False)
+        self.stop_button.setEnabled(False)
         # self.start_upload()
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Клиент SecurityApp"))
-        self.label.setText(_translate("MainWindow", "Статус приложения"))
-        self.pushButton_3.setText(_translate("MainWindow", "Транзакция"))
-        self.label_2.setText(_translate("MainWindow", "Ошибки во время работы"))
-        self.pushButton_1.setText(_translate("MainWindow", "Отправлять"))
-        self.pushButton_2.setText(_translate("MainWindow", "Прекратить"))
-        self.pushButton_4.setText(_translate("MainWindow", "Симуляция ошибки"))
-        self.pushButton_5.setText(_translate("MainWindow", "Симуляция взлома"))
+        self.status_label.setText(_translate("MainWindow", "Статус приложения"))
+        self.errors_label.setText(_translate("MainWindow", "Ошибки во время работы"))
+        self.send_data_button.setText(_translate("MainWindow", "Отправлять"))
+        self.stop_button.setText(_translate("MainWindow", "Прекратить"))
+        self.transaction_button.setText(_translate("MainWindow", "Транзакция"))
+        self.error_button.setText(_translate("MainWindow", "Симуляция ошибки"))
+        self.alarm_button.setText(_translate("MainWindow", "Симуляция взлома"))
 
 
 def send_error(application, tb):
@@ -177,9 +196,8 @@ def send_error(application, tb):
     """
     error = {'error': tb}
     url = f"http://localhost:5000/api/error/{application.app_id}"
-    r = requests.post(url, data=error)
-    answer = r.json()
-    if answer and 'command' in answer:
+    answer = post_data(url, error)
+    if isinstance(answer, dict) and 'command' in answer:
         print(answer['command'])
 
 
@@ -208,7 +226,7 @@ if __name__ == "__main__":
     sys.excepthook = excepthook
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
+    ui = MainWindowUI()
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
