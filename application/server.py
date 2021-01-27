@@ -18,42 +18,52 @@ parser.add_argument('error')
 parser.add_argument('transaction')
 
 
+def decrypt_client_message(args):
+    if args.key is not None:
+        decrypt = decrypt_message(args.key.encode())
+        message = json.loads(decrypt)
+        return message
+
+
 class Status(Resource):
     def post(self, app_id):
         args = parser.parse_args()
-        print(f'Статус приложения {app_id}: {args.status}')
-        answer = {}
-        return answer
+        message = decrypt_client_message(args)
+        if isinstance(message, dict) and 'status' in message:
+            print(f'Статус приложения {app_id}: {message["status"]}')
+            return 200
 
 
 class Errors(Resource):
     def post(self, app_id):
         args = parser.parse_args()
-        print(f'Ошибка в приложении {app_id}: {args.error}')
-        answer = {}
-        return answer
+        message = decrypt_client_message(args)
+        if isinstance(message, dict) and 'error' in message:
+            print(f'Ошибка в приложении {app_id}: {message["error"]}')
 
 
 class Transaction(Resource):
     def post(self, app_id):
         args = parser.parse_args()
-        answer = {}
-        if args.key is not None:
-            decrypt = decrypt_message(args.key.encode())
-            message = json.loads(decrypt)
-            if message and 'transaction' in message:
-                print(f'Получена транзакция от приложения {app_id}: {message["transaction"]}')
-                command = {'command': 'Транзакция получена сервером'}
-                answer = {'key': encrypt_message(command)}
-        print(type(answer), answer)
-        return answer
+        message = decrypt_client_message(args)
+        if isinstance(message, dict) and 'transaction' in message:
+            print(f'Получена транзакция от приложения {app_id}: {message["transaction"]}')
+            command = {'command': 'Транзакция получена сервером'}  # 'Транзакция получена сервером'
+            answer = {'key': encrypt_message(command)}
+            return answer
+        return None
 
 
 class Alarm(Resource):
     def post(self, app_id):
-        print(f'Попытка взлома в приложении {app_id}, перезагрузить систему')
-        answer = {'command': 'reload'}
-        return answer
+        args = parser.parse_args()
+        message = decrypt_client_message(args)
+        if isinstance(message, dict) and 'alert' in message:
+            print(f'Получено предупреждение от приложения {app_id}: {message["alert"]}')
+            command = {'command': 'reload'}  # 'Транзакция получена сервером'
+            answer = {'key': encrypt_message(command)}
+            return answer
+        return None
 
 
 api.add_resource(Status, '/api/status/<int:app_id>')
