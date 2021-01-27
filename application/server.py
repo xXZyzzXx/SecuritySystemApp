@@ -5,10 +5,12 @@ import json
 
 from flask import Flask, Blueprint, request, jsonify
 from flask_restful import Api, Resource, reqparse
+from flask_talisman import Talisman
 
 from encrypt import encrypt_message, decrypt_message
 
 app = Flask(__name__)
+Talisman(app)
 api_bp = Blueprint('api', __name__)
 api = Api(api_bp)
 parser = reqparse.RequestParser()
@@ -68,9 +70,9 @@ class Alarm(Resource):
     def post(self, app_id):
         args = parser.parse_args()
         message = decrypt_client_message(args)
-        if isinstance(message, dict) and 'alert' in message:
-            print(f'Получено предупреждение от приложения {app_id}: {message["alert"]}')
-            command = {'command': 'reload'}  # 'Транзакция получена сервером'
+        if isinstance(message, dict) and 'alarm' in message:
+            print(f'Получено предупреждение от приложения {app_id}: {message["alarm"]}')
+            command = {'command': 'reload'}
             answer = {'key': encrypt_message(command)}
             return answer
         return None
@@ -90,4 +92,4 @@ evn = os.environ.get('FLASK_ENV', 'default')
 app.config.from_object(configs[evn])  # Получить значение FLASK_ENV и настроить конфигурацию
 
 if __name__ == '__main__':
-    app.run()  # ssl_context='adhoc'
+    app.run(port=8080)  # ssl_context='adhoc'
