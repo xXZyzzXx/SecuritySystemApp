@@ -34,7 +34,7 @@ class MainWindowUI(object):
         """
         Отправляет транзакцию на сервер, выводит полученный ответ
         """
-        url = f"http://localhost:5000/api/transaction/{self.app_id}"
+        url = f"http://localhost:8080/api/transaction/{self.app_id}"
         transaction = {'transaction': {'user': 2}}
         answer = post_data(url, transaction)
         if isinstance(answer, dict) and 'command' in answer:
@@ -47,7 +47,7 @@ class MainWindowUI(object):
         Отправляет статус приложения на сервер каждое n-ное время
         """
         status = {'status': 'active'}
-        url = f"http://localhost:5000/api/status/{self.app_id}"
+        url = f"http://localhost:8080/api/status/{self.app_id}"
         post_data(url, status)
 
     def send_alarm(self):
@@ -56,7 +56,7 @@ class MainWindowUI(object):
         при получении команды 'reload' выводит полученную команду
         """
         alert = {'alert': 'caution'}
-        url = f"http://localhost:5000/api/alarm/{self.app_id}"
+        url = f"http://localhost:8080/api/alarm/{self.app_id}"
         answer = post_data(url, alert)
         if isinstance(answer, dict) and 'command' in answer:
             if answer['command'] == 'reload':
@@ -195,7 +195,7 @@ def send_error(application, tb):
     :param str tb: Сообщение об ошибке (traceback)
     """
     error = {'error': tb}
-    url = f"http://localhost:5000/api/error/{application.app_id}"
+    url = f"http://localhost:8080/api/error/{application.app_id}"
     answer = post_data(url, error)
     if isinstance(answer, dict) and 'command' in answer:
         print(answer['command'])
