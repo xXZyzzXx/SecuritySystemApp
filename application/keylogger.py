@@ -35,6 +35,8 @@ try:
 except:
     print("configuration not set")
 
-data = dev.read(0x81, 4)
+
+reading_address = 0x81
+data = dev.read(reading_address, 4)
 print(f'data: {data}')
 
