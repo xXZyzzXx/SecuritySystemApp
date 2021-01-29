@@ -55,9 +55,9 @@ class MainWindowUI(object):
         Отправляется на сервер в случае попытки взлома приложения,
         при получении команды 'reload' выводит полученную команду
         """
-        alert = {'alert': 'caution'}
+        alarm = {'alarm': 'caution'}
         url = f"http://localhost:8080/api/alarm/{self.app_id}"
-        answer = post_data(url, alert)
+        answer = post_data(url, alarm)
         if isinstance(answer, dict) and 'command' in answer:
             if answer['command'] == 'reload':
                 self.show_reload_messagebox(answer)

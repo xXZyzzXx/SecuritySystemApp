@@ -5,12 +5,12 @@ import json
 
 from flask import Flask, Blueprint, request, jsonify
 from flask_restful import Api, Resource, reqparse
-from flask_talisman import Talisman
+from flask_talisman import Talisman, talisman
 
 from encrypt import encrypt_message, decrypt_message
 
 app = Flask(__name__)
-Talisman(app)
+Talisman(app, force_https=False)
 api_bp = Blueprint('api', __name__)
 api = Api(api_bp)
 parser = reqparse.RequestParser()
