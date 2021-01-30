@@ -135,28 +135,28 @@ class MainWindowUI(object):
         self.lcdNumber_2.setObjectName("lcdNumber_2")
         self.send_data_button = QtWidgets.QPushButton(self.centralwidget)
         self.send_data_button.setGeometry(QtCore.QRect(210, 20, 75, 23))
-        self.send_data_button.setObjectName("pushButton_1")
+        self.send_data_button.setObjectName("send_data_button")
         self.stop_button = QtWidgets.QPushButton(self.centralwidget)
         self.stop_button.setGeometry(QtCore.QRect(300, 20, 75, 23))
-        self.stop_button.setObjectName("pushButton_2")
+        self.stop_button.setObjectName("stop_button")
         self.transaction_button = QtWidgets.QPushButton(self.centralwidget)
         self.transaction_button.setGeometry(QtCore.QRect(20, 140, 111, 31))
         font = QtGui.QFont()
         font.setPointSize(12)
         self.transaction_button.setFont(font)
-        self.transaction_button.setObjectName("pushButton_3")
+        self.transaction_button.setObjectName("transaction_button")
         self.error_button = QtWidgets.QPushButton(self.centralwidget)
         self.error_button.setGeometry(QtCore.QRect(150, 140, 161, 31))
         font = QtGui.QFont()
         font.setPointSize(12)
         self.error_button.setFont(font)
-        self.error_button.setObjectName("pushButton_4")
+        self.error_button.setObjectName("error_button")
         self.alarm_button = QtWidgets.QPushButton(self.centralwidget)
         self.alarm_button.setGeometry(QtCore.QRect(330, 140, 151, 31))
         font = QtGui.QFont()
         font.setPointSize(12)
         self.alarm_button.setFont(font)
-        self.alarm_button.setObjectName("pushButton_5")
+        self.alarm_button.setObjectName("alarm_button")
         MainWindow.setCentralWidget(self.centralwidget)
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -192,7 +192,8 @@ def send_error(application, tb):
     Отправляет сообщение об ошибке в приложении
 
     :param application: Ui_MainWindow class
-    :param str tb: Сообщение об ошибке (traceback)
+    :param tb: Сообщение об ошибке (traceback)
+    :type tb: str
     """
     error = {'error': tb}
     url = f"http://localhost:8080/api/error/{application.app_id}"
