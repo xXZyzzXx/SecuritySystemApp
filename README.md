@@ -23,9 +23,3 @@
 
     cd application
     python -m unittest --buffer
-
-## TODO List:
-
-* Добавить тесты
-
-* Отправка буфера с помощью pyusb вместе с транзакцией
